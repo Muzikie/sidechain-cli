@@ -1,8 +1,9 @@
+import { Config } from '../types';
 import { readFile } from '../utils/io';
 import { wait } from '../utils/wait';
 
-export const selfVote = async (sidechainClient) => {
-  const { keys } = await readFile('../config/default/dev-validators.json');
+export const selfVote = async (config: Config, sidechainClient) => {
+  const { keys } = await readFile(`${config.sideChain.seedLocation}/config/${config.sideChain.network}/dev-validators.json`);
   for await (const validator of keys) {
     const { privateKey, address } = validator;
     console.log('Trying', address);
@@ -32,9 +33,9 @@ export const selfVote = async (sidechainClient) => {
   }
 };
 
-const voteOthers = async (sidechainClient) => {
+const voteOthers = async (config: Config, sidechainClient) => {
   let batchSize = 0;
-  const { keys } = await readFile('../config/default/dev-validators.json');
+  const { keys } = await readFile(`${config.sideChain.seedLocation}/config/${config.sideChain.network}/dev-validators.json`);
   for await (const validator of keys) {
     const { privateKey, address: stakerAddress } = validator;
     let nonce = 0;
@@ -86,8 +87,8 @@ const voteOthers = async (sidechainClient) => {
   }
 }
 
-const checkBalances = async (sidechainClient) => {
-  const { keys } = await readFile('../config/default/dev-validators.json');
+const checkBalances = async (config: Config, sidechainClient) => {
+  const { keys } = await readFile(`${config.sideChain.seedLocation}/config/${config.sideChain.network}/dev-validators.json`);
   for await (const validator of keys) {
     const sidechainNodeInfo = await sidechainClient.invoke('token_getBalances', { address: validator.address });
     console.log('sidechainNodeInfo', Array.isArray(sidechainNodeInfo?.balances) ? sidechainNodeInfo.balances : 'no locked');
@@ -95,16 +96,16 @@ const checkBalances = async (sidechainClient) => {
 }
 
 
-export async function stakeTokensForValidators (sidechainClient) {
+export async function stakeTokensForValidators (config: Config, sidechainClient) {
   // Self-stake loop
-  await selfVote(sidechainClient);
+  await selfVote(config, sidechainClient);
 
   await wait(10000);
 
   // Cross-stake loop
-  await voteOthers(sidechainClient);
+  await voteOthers(config, sidechainClient);
 
   await wait(10000);
 
-  await checkBalances(sidechainClient);
+  await checkBalances(config, sidechainClient);
 }

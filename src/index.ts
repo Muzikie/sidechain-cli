@@ -22,28 +22,28 @@ const steps = {
   updateInclusionProofKeys:
     async (config: Config, _clients) => await updateInclusionProofKeys(config),
   updateEncryptedPrivateKey:
-    async (config: Config, _clients) => await updateEncryptedPrivateKey(config.mainChainID, config.sideChainID, config.password),
+    async (config: Config, _clients) => await updateEncryptedPrivateKey(config.mainChain.chainId, config.sideChain.chainId, config.password),
   configureRelayForEventStorage:
-    async (config: Config, _clients) => await configureRelayForEventStorage(config.sideChainID),
+    async (config: Config, _clients) => await configureRelayForEventStorage(config.sideChain.chainId),
   copyGenesisBlob:
     async (config, _clients) => await copyGenesisBlob(config),
   deleteExistingAppData:
-    async (config: Config, _clients) => await deleteExistingAppData(config.sideChainName),
+    async (config: Config, _clients) => await deleteExistingAppData(config.sideChain.name),
   startNodes:
     async (_config, _clients) => await startNodes(),
   connectToChains: async (config: Config) => {
-    const { mainchainClient, sidechainClient } = await connectToChains(config.sideChainName, config.mainChainName);
+    const { mainchainClient, sidechainClient } = await connectToChains(config.sideChain.name, config.mainChain.name);
     await authorizeChainConnectorPlugins(sidechainClient, mainchainClient, config.password);
     return { mainchainClient, sidechainClient };
   },
   transferTokensToRelayer:
-    async (config: Config, clients: any) => await transferTokensToRelayer(config.sideChainID, config.mainChainID, config.mainChainAccount, clients.sidechainClient, clients.mainchainClient),
+    async (config: Config, clients: any) => await transferTokensToRelayer(config.sideChain.chainId, config.mainChain.chainId, config.mainChainAccount, clients.sidechainClient, clients.mainchainClient),
   registerChains:
-    async (config: Config, clients: any) => await registerChains(config.sideChainName, config.mainChainName, clients.sidechainClient, clients.mainchainClient),
+    async (config: Config, clients: any) => await registerChains(config, clients),
   checkTransferCrossChain:
-    async (config: Config, clients: any) => await checkTransferCrossChain(config.sideChainID, config.mainChainID, clients.mainchainClient),
+    async (config: Config, clients: any) => await checkTransferCrossChain(config.sideChain.chainId, config.mainChain.chainId, clients.mainchainClient),
   stakeTokensForValidators:
-    async (_config, clients: any) => await stakeTokensForValidators(clients.sidechainClient),
+    async (config: Config, clients: any) => await stakeTokensForValidators(config, clients.sidechainClient),
 };
 
 (async () => {

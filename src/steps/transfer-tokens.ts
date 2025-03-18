@@ -1,22 +1,7 @@
 import { apiClient, Transaction, codec } from 'klayr-sdk';
 import { readFile } from '../utils/io';
 import { wait } from '../utils/wait';
-
-interface TransferProps {
-  client: apiClient.APIClient;
-  senderAccount: {
-    address: string;
-    privateKey: string;
-    publicKey: string;
-  };
-  recipientAddress: string;
-  amount: string;
-  sendingChainID: string;
-}
-type TransferCrossChainProps = TransferProps & {
-  receivingChainID: string;
-  mainChainID: string;
-}
+import { TransferCrossChainProps, TransferProps } from '../types'
 
 const crossChainTransferParamsSchema = {
   $id: '/klayr/ccTransferParams',

@@ -1,13 +1,14 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { Config } from '../types';
 
 // Convert writeFile to a Promise-based function
 const execAsync = promisify(exec);
 
-export async function createGenesisBlock(config): Promise<void> {
+export async function createGenesisBlock(config: Config): Promise<void> {
   try {
     // Construct the command
-    let command = `${config.seed.location}/bin/run genesis-block:create --output ${config.seed.location}/config/${config.seed.network} --assets-file ${config.seed.location}/config/${config.seed.network}/genesis_assets.json`;
+    let command = `${config.sideChain.seedLocation}/bin/run genesis-block:create --output ${config.sideChain.seedLocation}/config/${config.sideChain.network} --assets-file ${config.sideChain.seedLocation}/config/${config.sideChain.network}/genesis_assets.json`;
 
     console.log('Generating genesis block');
 
