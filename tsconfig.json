@@ -1,10 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "CommonJS",
+    // "module": "ESNext",
     "esModuleInterop": true,
-    "moduleResolution": "Node",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "forceConsistentCasingInFileNames": true,
+		"target": "es2019",
+		"module": "commonjs",
+		"declaration": true,
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"sourceMap": true,
+		// "strict": true
   },
-  "include": ["./scripts/**/*.ts"]
+  "include": ["./src/**/*.ts"]
 }

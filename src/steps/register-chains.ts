@@ -1,24 +1,22 @@
-import { apiClient, cryptography, Modules, codec, Transaction, Types } from 'klayr-sdk';
-// Replace this with the path to a file storing the public and private key of a mainchain account who will send the sidechain registration transaction.
-// (Can be any account with enough tokens).
-import { keys } from '../out/account.json';
-import {keys as sidechainDevValidators} from '../../seed/config/default/dev-validators.json';
+import { apiClient, cryptography, Modules, codec, Transaction } from 'klayr-sdk';
+import { readFile } from '../utils/io';
 
-async function registerSideChainOnMainChain(sideChainName:string, mainChainName: string, sidechainClient: apiClient.APIClient, mainchainClient: apiClient.APIClient) {
-	// Get node info data from sidechain and mainchain
-	const sidechainNodeInfo = await sidechainClient.invoke('system_getNodeInfo');
+async function registerSideChainOnMainChain(sideChainName:string, mainChainName: string, sideChainClient: apiClient.APIClient, mainChainClient: apiClient.APIClient) {
+	// Get node info data from sideChain and mainChain
+	const sideChainNodeInfo = await sideChainClient.invoke('system_getNodeInfo');
+	// const mainChainNodeInfo = await mainChainClient.invoke('system_getNodeInfo');
 
-	// Get info about the active sidechain validators and the certificate threshold
-	const { validators: sidechainActiveValidators, certificateThreshold } =
-		await sidechainClient.invoke('consensus_getBFTParameters', {
-			height: sidechainNodeInfo.height,
+	// Get info about the active sideChain validators and the certificate threshold
+	const { validators: sideChainActiveValidators, certificateThreshold } =
+		await sideChainClient.invoke('consensus_getBFTParameters', {
+			height: sideChainNodeInfo.height,
 		});
 
-	console.log('sidechainActiveValidators', (sidechainActiveValidators as unknown[]).length);
-	console.log(JSON.stringify(sidechainActiveValidators));
+	console.log('sideChainActiveValidators', (sideChainActiveValidators as unknown[]).length);
+	console.log(JSON.stringify(sideChainActiveValidators));
 
 	// Sort validator list lexicographically after their BLS key
-	(sidechainActiveValidators as { blsKey: string; bftWeight: string }[]).sort((a, b) =>
+	(sideChainActiveValidators as { blsKey: string; bftWeight: string }[]).sort((a, b) =>
 		Buffer.from(a.blsKey, 'hex').compare(Buffer.from(b.blsKey, 'hex')),
 	);
 
@@ -28,35 +26,42 @@ async function registerSideChainOnMainChain(sideChainName:string, mainChainName:
 		fee: BigInt(2000000000),
 		params: {
 			sidechainCertificateThreshold: certificateThreshold,
-			sidechainValidators: sidechainActiveValidators,
-			chainID: sidechainNodeInfo.chainID,
+			sidechainValidators: sideChainActiveValidators,
+			chainID: sideChainNodeInfo.chainID,
 			name: sideChainName.replace(/-/g, '_'),
 		},
 	};
 
-	const signedTransaction = await mainchainClient.transaction.create(
+	console.log('unsignedTransaction', unsignedTransaction);
+
+	const { keys } = await readFile('../out/account.json');
+
+	const signedTransaction = await mainChainClient.transaction.create(
 		unsignedTransaction,
 		keys[0].privateKey,
 	);
 
-	console.log('Sending transaction to mainchain');
+	console.log('Sending transaction to mainChain');
 	try {
-		const receipt = await mainchainClient.transaction.send(signedTransaction);
+		const receipt = await mainChainClient.transaction.send(signedTransaction);
 		console.log(
-			`Sent sidechain '${sideChainName}' registration transaction on mainchain node '${mainChainName}'. Tx ID:`,
+			`Sent sideChain '${sideChainName}' registration transaction on mainChain node '${mainChainName}'. Tx ID:`,
 			receipt.transactionId,
 		);
+
+		// Set the registration height on the receiving node and restart it
+		// await addRegistrationHeight('mainChain', Number(mainChainNodeInfo.height) + 2);
 	} catch (error) {
 		console.log(error);
 	}
 };
 
-async function registerMainChainOnSideChain (sideChainName:string, mainChainName: string, sidechainClient: apiClient.APIClient, mainchainClient: apiClient.APIClient) {
+async function registerMainChainOnSideChain (sideChainName:string, _mainChainName: string, sideChainClient: apiClient.APIClient, mainChainClient: apiClient.APIClient) {
 	const { bls, address } = cryptography;
 
-	// Get node info from sidechain and mainchain
-	const mainchainNodeInfo = await mainchainClient.invoke('system_getNodeInfo');
-	const sidechainNodeInfo = await sidechainClient.invoke('system_getNodeInfo');
+	// Get node info from sideChain and mainChain
+	const mainChainNodeInfo = await mainChainClient.invoke('system_getNodeInfo');
+	const sideChainNodeInfo = await sideChainClient.invoke('system_getNodeInfo');
 
 	interface BFTParametersResponse {
 		validators: { blsKey: string; bftWeight: string }[];
@@ -64,22 +69,22 @@ async function registerMainChainOnSideChain (sideChainName:string, mainChainName
 	}
 
 	const {
-		validators: mainchainActiveValidators,
-		certificateThreshold: mainchainCertificateThreshold,
-	} = await mainchainClient.invoke('consensus_getBFTParameters', {
-		height: mainchainNodeInfo.height,
+		validators: mainChainActiveValidators,
+		certificateThreshold: mainChainCertificateThreshold,
+	} = await mainChainClient.invoke('consensus_getBFTParameters', {
+		height: mainChainNodeInfo.height,
 	}) as BFTParametersResponse;
 
-	console.log('mainchainActiveValidators', mainchainActiveValidators.length);
-	console.log('mainchainCertificateThreshold', mainchainCertificateThreshold);
+	console.log('mainChainActiveValidators', mainChainActiveValidators.length);
+	console.log('mainChainCertificateThreshold', mainChainCertificateThreshold);
 
 	const paramsJSON = {
-		ownChainID: sidechainNodeInfo.chainID,
+		ownChainID: sideChainNodeInfo.chainID,
 		ownName: sideChainName.replace(/-/g, '_'),
-		mainchainValidators: (mainchainActiveValidators as { blsKey: string; bftWeight: string }[])
+		mainchainValidators: (mainChainActiveValidators as { blsKey: string; bftWeight: string }[])
 			.map(v => ({ blsKey: v.blsKey, bftWeight: v.bftWeight }))
 			.sort((a, b) => Buffer.from(a.blsKey, 'hex').compare(Buffer.from(b.blsKey, 'hex'))),
-		mainchainCertificateThreshold,
+		mainchainCertificateThreshold: mainChainCertificateThreshold,
 	};
 	console.log('paramsJSON', paramsJSON);
 
@@ -99,21 +104,22 @@ async function registerMainChainOnSideChain (sideChainName:string, mainChainName
 	const message = codec.encode(Modules.Interoperability.registrationSignatureMessageSchema, params);
 
 	// Get active validators from sidechain
-	const { validators: sidechainActiveValidators } = await sidechainClient.invoke(
+	const { validators: sidechainActiveValidators } = await sideChainClient.invoke(
 		'consensus_getBFTParameters',
-		{ height: sidechainNodeInfo.height },
+		{ height: sideChainNodeInfo.height },
 	);
-    
+
 	console.log('sidechainActiveValidators', Array.isArray(sidechainActiveValidators) ? sidechainActiveValidators.length : sidechainActiveValidators != undefined ? Object.keys(sidechainActiveValidators).length : 'Unknown');
 
 	// Add validator private keys to the sidechain validator list
 	const activeValidatorsBLSKeys: { blsPublicKey: Buffer; blsPrivateKey: Buffer }[] = [];
+	const { keys: sideChainDevValidators } = await readFile('../config/default/dev-validators.json');
 
 	for (const activeValidator of sidechainActiveValidators as {
 		blsKey: string;
 		bftWeight: string;
 	}[]) {
-		const sidechainDevValidator = sidechainDevValidators.find(
+		const sidechainDevValidator = sideChainDevValidators.find(
 			devValidator => devValidator.plain.blsKey === activeValidator.blsKey,
 		);
 		if (sidechainDevValidator) {
@@ -152,8 +158,8 @@ async function registerMainChainOnSideChain (sideChainName:string, mainChainName
 	);
 
 	// Get public key and nonce of the sender account
-	const relayerKeyInfo = sidechainDevValidators[0];
-	const { nonce } = await sidechainClient.invoke<{ nonce: string }>('auth_getAuthAccount', {
+	const relayerKeyInfo = sideChainDevValidators[0];
+	const { nonce } = await sideChainClient.invoke<{ nonce: string }>('auth_getAuthAccount', {
 		address: address.getKlayr32AddressFromPublicKey(Buffer.from(relayerKeyInfo.publicKey, 'hex')),
 	});
 
@@ -177,20 +183,23 @@ async function registerMainChainOnSideChain (sideChainName:string, mainChainName
 
 	// Sign the transaction
 	tx.sign(
-		Buffer.from(sidechainNodeInfo.chainID as string, 'hex'),
+		Buffer.from(sideChainNodeInfo.chainID as string, 'hex'),
 		Buffer.from(relayerKeyInfo.privateKey, 'hex'),
 	);
 
 	// Post the transaction to a sidechain node
-	const result = await sidechainClient.invoke<{
+	const result = await sideChainClient.invoke<{
 		transactionId: string;
 	}>('txpool_postTransaction', {
 		transaction: tx.getBytes().toString('hex'),
 	});
+	console.log('Successfully registered main chain on side chain:', result);
 
+	// Set the registration height on the receiving node and restart it
+	// await addRegistrationHeight('mainChain', Number(sideChainNodeInfo.height) + 1);
 };
 
 export async function registerChains (sideChainName:string, mainChainName: string, sidechainClient: apiClient.APIClient, mainchainClient: apiClient.APIClient) {
-	await registerMainChainOnSideChain(sideChainName, mainChainName, mainchainClient, sidechainClient);
-	await registerSideChainOnMainChain(sideChainName, mainChainName, mainchainClient, sidechainClient);
+	await registerSideChainOnMainChain(sideChainName, mainChainName, sidechainClient, mainchainClient);
+	await registerMainChainOnSideChain(sideChainName, mainChainName, sidechainClient, mainchainClient);
 }

@@ -2,6 +2,7 @@ import { passphrase } from 'klayr-sdk';
 import { exec } from 'child_process';
 import { writeFile } from 'fs';
 import { promisify } from 'util';
+import path from 'path';
 
 // Convert writeFile to a Promise-based function
 const writeFileAsync = promisify(writeFile);
@@ -10,7 +11,7 @@ const execAsync = promisify(exec);
 export async function createPassphrase(passphrasePath?: string) {
   const relaterAccountPassphrase = passphrase.Mnemonic.generateMnemonic();
   console.log({relaterAccountPassphrase})
-  const filePath = passphrasePath || '../out/passphrase.json';
+  const filePath = path.join('..', passphrasePath || './out/passphrase.json');
   try {
     await writeFileAsync(filePath, JSON.stringify({relaterAccountPassphrase}), 'utf8');
     console.log(`Passphrase file saved at ${filePath}`);
@@ -25,8 +26,8 @@ export async function storeAccountKey(accountPath?: string, passphrasePath?: str
   try {
     const pass = await createPassphrase(passphrasePath);
     // Construct the command
-    const path = accountPath || '../out/account.json'
-    let command = `klayr-core keys:create --no-encrypt --passphrase "${pass}" --output ${path}`;
+    const filePath = path.join('..', accountPath || './out/account.json');
+    let command = `klayr-core keys:create --no-encrypt --passphrase "${pass}" --output ${filePath}`;
 
     console.log(`Executing: ${command}`);
 

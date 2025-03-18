@@ -1,11 +1,11 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-export async function copyGenesisBlob(): Promise<void> {
+export async function copyGenesisBlob(config): Promise<void> {
   try {
     // Define the source and destination paths
-    const sourcePath = path.resolve('../../seed/config/default/genesis_block.blob');
-    const destinationPath = path.resolve('../config/default/genesis_block.blob');
+    const sourcePath = path.resolve(`${config.seed.location}/config/${config.seed.network}/genesis_block.blob`);
+    const destinationPath = path.resolve(`${config.relay.location}/relay/config/${config.relay.network}/genesis_block.blob`);
 
     // Ensure the destination directory exists
     const destinationDir = path.dirname(destinationPath);

@@ -1,8 +1,8 @@
-import { keys } from '../../seed/config/default/dev-validators.json';
+import { readFile } from '../utils/io';
+import { wait } from '../utils/wait';
 
-const wait = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const selfVote = async (sidechainClient) => {
+export const selfVote = async (sidechainClient) => {
+  const { keys } = await readFile('../config/default/dev-validators.json');
   for await (const validator of keys) {
     const { privateKey, address } = validator;
     console.log('Trying', address);
@@ -34,6 +34,7 @@ const selfVote = async (sidechainClient) => {
 
 const voteOthers = async (sidechainClient) => {
   let batchSize = 0;
+  const { keys } = await readFile('../config/default/dev-validators.json');
   for await (const validator of keys) {
     const { privateKey, address: stakerAddress } = validator;
     let nonce = 0;
@@ -86,6 +87,7 @@ const voteOthers = async (sidechainClient) => {
 }
 
 const checkBalances = async (sidechainClient) => {
+  const { keys } = await readFile('../config/default/dev-validators.json');
   for await (const validator of keys) {
     const sidechainNodeInfo = await sidechainClient.invoke('token_getBalances', { address: validator.address });
     console.log('sidechainNodeInfo', Array.isArray(sidechainNodeInfo?.balances) ? sidechainNodeInfo.balances : 'no locked');
@@ -96,6 +98,8 @@ const checkBalances = async (sidechainClient) => {
 export async function stakeTokensForValidators (sidechainClient) {
   // Self-stake loop
   await selfVote(sidechainClient);
+
+  await wait(10000);
 
   // Cross-stake loop
   await voteOthers(sidechainClient);

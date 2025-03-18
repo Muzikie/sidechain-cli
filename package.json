@@ -1,11 +1,12 @@
 {
   "name": "create-sidechain",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
-    "start": "npx ts-node index.ts"
+    "dev": "npx ts-node ./src/index.ts",
+    "build": "tsc",
+    "start": "node ./dist/index.js"
   },
-  "main": "./scripts/index.ts",
+  "main": "./src/index.ts",
   "engines": {
     "node": ">=18.12.0 <=18",
     "npm": ">=8.1.0"
@@ -22,7 +23,7 @@
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
-    "tsc": "^2.0.4",
-    "typescript": "^5.6.3"
-  }
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "yarn@3.2.3+sha512.f26f951f67de0c6a33ee381e5ff364709c87e70eb5e65c694e4facde3512f1fa80b8679e6ba31ce7d340fbb46f08dd683af9457e240f25a204be7427940d767e"
 }
