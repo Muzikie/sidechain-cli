@@ -1,0 +1,31 @@
+{
+  "config": {
+    "seedLocation": "~/path/to/seed/project",
+    "relayLocation": "~/path/to/relay/project",
+    "sideChainName": "sideChanName",
+    "mainChainName": "klayr-core",
+    "mainChainID": "00000000",
+    "sideChainID": "00000001",
+    "password": "STRONG_PASSWORD",
+    "mainChainAccount": {
+      "address": "SAMPLE_ADDRESS",
+      "publicKey": "SAMPLE_PUBLIC_KEY",
+      "privateKey": "SAMPLE_PRIVATE_KEY"
+    }
+  },
+  "steps": [
+    "createGenesisBlock",
+    "storeAccountKey",
+    "updateInclusionProofKeys",
+    "updateEncryptedPrivateKey",
+    "configureRelayForEventStorage",
+    "copyGenesisBlob",
+    "deleteExistingAppData",
+    "startNodes",
+    "connectToChains",
+    "transferTokensToRelayer",
+    "registerChains",
+    "checkTransferCrossChain",
+    "stakeTokensForValidators"
+  ]
+}
